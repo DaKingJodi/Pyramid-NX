@@ -1,0 +1,8 @@
+{
+	"name": "Monolith",
+	"mainObj": [
+		"Win a run to The Sanctum as Null.", "Win a run to The Sanctum as Skully.", "Win a run to The Sanctum as Overlord.", "Win a run to The Sanctum as D-13.", "Win a run to The Sanctum as ???.", "Win a run to The Sanctum as Arena Blaster."
+    ], "bonusObj": [
+      "Defeat the third floor boss without using bombs.", "Skip a cartridge.", "Don't enter shortcut rooms.", "Reach the Unknown boss fight.", "Reach the Temple.", "Don't use bombs in the Excavation.", "Don't shop in the first two floors.", "Skip two weapons.", "Skip an upgrade terminal.", "Explore every room."
+    ]
+}
