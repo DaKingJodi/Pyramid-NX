@@ -1,0 +1,8 @@
+{
+	"name": "Isaac",
+    "mainObj": [
+      "Win a run starting as Eden.", "Win a run starting as Isaac.", "Win a run starting as Cain.", "Win a run starting as The Lost.", "Win a run starting as Lazarus.", "Win a run starting as Maggie.", "Win a run starting as The Keeper.", "Win a run starting as ??? (Blue Baby).", "Win a run starting as Forgotten.", "Win a run starting as Judas."
+    ], "bonusObj": [
+      "No Devil deals. Only Angel deals. Beat the Chest.", "No Angel deals. Only Devil deals. Beat the Dark Room.", "Play on the HARD HARD seed. Beat the Chest.", "Beat Boss Rush. If you cannot make it to Boss Rush you don't gain points for this challenge. Beat the Chest.", "Beat Hush. If you cannot make it to Hush you don't gain points for this challenge. Beat the Dark Room.", "Skip two item room items. Beat the Chest.", "Skip a boss room item. Beat the Chest.", "Play on the VNKN 0WN seed. Beat the Chest.", "Play on the G0NE S00N seed. Beat the Chest.", "Play on the KEEP TRAK seed. Beat the Chest.", "Using the debug console: Spawn both key pieces and beat Mega Satan.", "Using the debug console: Spawn Bob's Brain."
+	]
+}
