@@ -26,62 +26,82 @@ namespace fs = std::filesystem;
 using json = nlohmann::json;
 DIR *dir;
 struct dirent *ent;
-using namespace std;
+// using namespace std;
 
-/*
-struct card {
-  std::string game;
-  std::string primary;
-  std::string secondary;
-  bool completed;
-
-  card(std::string game, std::string primary, std::string secondary,
-       bool completed) {
-    this->game = game;
-    this->primary = primary;
-    this->secondary = secondary;
-    this->completed = completed;
+void change_color(std::vector<card> card_list, completion_status result,
+                  int obj) {
+  if (obj == 1) {
+    if (result == completion_status::failed)
+      std::cout << CONSOLE_RED;
+    else if ((result == completion_status::succeeded) |
+             (result == completion_status::succeeded_with_bonus) |
+             (result == completion_status::secondary_not_started))
+      std::cout << CONSOLE_GREEN;
+    else
+      std::cout << CONSOLE_WHITE;
+  } else if (obj == 2) {
+    if ((result == completion_status::failed) |
+            (result == completion_status::succeeded) &&
+        result != completion_status::secondary_not_started)
+      std::cout << CONSOLE_RED;
+    else if (result == completion_status::succeeded_with_bonus)
+      std::cout << CONSOLE_GREEN;
+    else
+      std::cout << CONSOLE_WHITE;
   }
-};
-*/
-void add_points(bool is_bonus, double score) {
+}
+
+void print_score(double score) { std::cout << "\x1b[1;55HScore: " << score; }
+
+void add_points(bool is_bonus, double &score) {
   if (is_bonus) {
     score += 125;
   }
   score += 175;
 }
-void finish_game(int game_number) {}
-/*
-bool _is_empty(std::ifstream &pFile) {
-  return pFile.peek() == std::ifstream::traits_type::eof();
-}
-*/
-void clrscrn() { cout << "\033[2J\033[1;1H"; }
-/*
-void print_game_list(int i, std::vector<std::string> game_list) {
-  cout << "                      \n\n\n\n";
-  cout << game_list.at(i);
-}
-*/
-void print_list(int i, std::vector<card> card_list) {
-  cout << "                                            \n\n\n\n";
-  cout << CONSOLE_YELLOW;
-  cout << card_list[i].game << "\n\n\n\n";
-  cout << CONSOLE_WHITE;
-  cout << card_list[i].primary << "\n\n\n\n";
-  cout << card_list[i].secondary << "\n\n\n\n";
-}
-/*
-void print_primary_list(int i), std::vector<std::string> primary_list){
-  cout << "                                            \n\n\n\n";
-  cout << primary_list.at(i);
+
+void remove_points(bool is_bonus, double &score) {
+  if (is_bonus) {
+    score -= 125;
+  }
+  score -= 175;
 }
 
-void print_secondary_list(int i), std::vector<std::string> secondary_list {
-  cout << "                                            \n\n\n\n";
-  cout << secondary_list.at(i);
+void clrscrn() { std::cout << "\033[2J\033[1;1H"; }
+
+void print_list(int i, std::vector<card> card_list) {
+  completion_status result = card_list[i].completed;
+  std::cout << "                                            \n\n\n\n";
+
+  std::cout << CONSOLE_YELLOW;
+  std::cout << card_list[i].game << "\n\n\n\n";
+  std::cout << CONSOLE_WHITE;
+
+  change_color(card_list, result, 1);
+  std::cout << card_list[i].primary << "\n\n\n\n";
+  std::cout << CONSOLE_WHITE;
+
+  change_color(card_list, result, 2);
+  std::cout << card_list[i].secondary << "\n\n\n\n";
+  std::cout << CONSOLE_WHITE;
 }
-*/
+
+void print_list(unsigned int i, std::vector<card> card_list) {
+  completion_status result = card_list[i].completed;
+  std::cout << "                                            \n\n\n\n";
+
+  std::cout << CONSOLE_YELLOW;
+  std::cout << card_list[i].game << "\n\n\n\n";
+  std::cout << CONSOLE_WHITE;
+
+  change_color(card_list, result, 1);
+  std::cout << card_list[i].primary << "\n\n\n\n";
+  std::cout << CONSOLE_WHITE;
+
+  change_color(card_list, result, 2);
+  std::cout << card_list[i].secondary << "\n\n\n\n";
+  std::cout << CONSOLE_WHITE;
+}
 
 void read_json(const fs::path &json_name, std::vector<card> &card_list) {
   std::ifstream file(json_name, std::ifstream::binary);
@@ -96,10 +116,11 @@ void read_json(const fs::path &json_name, std::vector<card> &card_list) {
   randint = rand() % game_json["bonusObj"].size() + 0;
   std::string secondary = game_json["bonusObj"][randint];
 
-  card_list.emplace_back(game, primary, secondary, false);
+  card_list.emplace_back(game, primary, secondary,
+                         completion_status::not_started);
+  file.close();
 }
 void update_list(std::vector<card> &card_list) {
-  // chdir("/");
   fs::path dir_path("../decks");
   std::error_code errc;
 
@@ -115,97 +136,260 @@ void update_list(std::vector<card> &card_list) {
 
   for (auto &ent : dir) {
     // std::cout << ent.path() << std::endl << std::endl;
-    if (std::string(ent.path()).ends_with(".json")) {
+    if (std::string(ent.path()).ends_with(".json") |
+        std::string(ent.path()).ends_with(".JSON")) {
       read_json(ent.path(), card_list);
     }
   }
   // closedir(dir_path);
 }
-void intro(std::vector<card> card_list) {
-  cout << "press + to exit\n\n\n";
-  cout << "Welcome to the Pyramid!\n\n";
-  cout << "a deck has been generated for you to complete!\n\n\n";
-  cout << CONSOLE_YELLOW "what card do you want to view?\n\n" CONSOLE_WHITE;
-  if (card_list.size() > 0) {
-    cout << "Y = ";
-    cout << card_list[0].game;
-  }
-  if (card_list.size() > 1) {
-    cout << "\n\nx = ";
-    cout << card_list[1].game;
-  }
-  if (card_list.size() > 2) {
-    cout << "\n\nB = ";
-    cout << card_list[2].game;
-  }
-  if (card_list.size() > 3) {
-    cout << "\n\nA = ";
-    cout << card_list[3].game;
-  }
+
+void end_game(double score) {
+  clrscrn();
+  std::cout << "youve finished the run with " << score << " points!\n\n";
+  std::cout << "press " << CONSOLE_YELLOW << "+ " << CONSOLE_WHITE
+            << "to exit and go back into the game to start a new run!";
+  std::remove("../decks/data.txt");
 }
 
-void intro2_electric_boogaloo(std::vector<card> card_list) {
-  cout << CONSOLE_YELLOW "what card do you want to view?\n\n" CONSOLE_WHITE;
-  if (card_list.size() > 0) {
-    cout << "Y = ";
-    cout << card_list[0].game;
-  }
-  if (card_list.size() > 1) {
-    cout << "\n\nx = ";
-    cout << card_list[1].game;
-  }
-  if (card_list.size() > 2) {
-    cout << "\n\nB = ";
-    cout << card_list[2].game;
-  }
-  if (card_list.size() > 3) {
-    cout << "\n\nA = ";
-    cout << card_list[3].game;
-  }
-  cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-}
-/*
-void save(std::ostream &os, std::vector<card> &v) {
-  for (auto &entry : v) {
-    os << entry << '\x1F';
-  }
-  os << '\x1D';
-}
+void select_menu(std::vector<card> &card_list, u64 kDown,
+                 unsigned int &selector, unsigned int &checker,
+                 bool &declare_menu, bool &declare_menu_confirmation,
+                 bool &no_quit, bool &no_exit_screen,
+                 double &score) { // dont ask.
+  bool already_pressed = false;
 
-void load(std::istream &is, std::vector<card> &v) {
-  std::string buf;
+  completion_status result = completion_status::not_started;
 
-  while (std::getline(is, buf, '\x1F')) {
-    v.emplace_back(buf);
-    if (is.peek() == '\x1D')
-      break;
+  // if left + right stick are pressed, end the run
+  if ((kDown & HidNpadButton_Down) && !declare_menu &&
+      !declare_menu_confirmation) {
+
+    // im lazy so im reusing this variable from earlier
+    declare_menu_confirmation = true;
+    declare_menu = false;
+
+    // if all the cards any cards dont have a final result, set all_filled to
+    // false
+    bool all_filled /* uwu */ = true;
+    for (unsigned int i = 0; i < card_list.size(); i++) {
+      if (card_list[i].completed == completion_status::not_started) {
+        all_filled = false;
+      }
+    }
+    if (!all_filled) {
+      clrscrn();
+      no_exit_screen = true;
+      no_quit = true;
+    } else {
+      clrscrn();
+      end_game(score);
+      no_exit_screen = true;
+    }
   }
 
-  is.get();
-}
-*/
-void finish_run(double score) {
-  cout << "You finished the run with ";
-  cout << score;
-  cout << "points!\n\n";
-  cout << "please press + to close the program and start it again for a new "
-          "run!";
+  else if (kDown & HidNpadButton_StickR && !declare_menu_confirmation) {
+    declare_menu = true;
+    no_quit = true;
+    checker = selector + 1;
+  }
+  // changes what card you are viewing
+  if (kDown & HidNpadButton_R && !no_exit_screen) {
+    if (card_list.size() > selector + 1) {
+      selector++;
+    } else {
+      selector = 0;
+    }
+    result = card_list[selector].completed;
+  }
+  if (kDown & HidNpadButton_L && !no_exit_screen) {
+    if (selector == 0) {
+
+      selector = card_list.size() - 1;
+    } else {
+      selector--;
+    }
+    result = card_list[selector].completed;
+  }
+  // if in declare menu
+  if (declare_menu && !declare_menu_confirmation) {
+    checker = selector;
+    no_quit = true;
+    clrscrn();
+
+    std::cout << "\x1b[25;1HPress " << CONSOLE_YELLOW << "B " << CONSOLE_WHITE
+              << "to cancel\n\n"
+              << CONSOLE_WHITE;
+
+    std::cout << "Press " << CONSOLE_YELLOW << "- " << CONSOLE_WHITE
+              << "if you failed the main objective\n\n";
+    std::cout << "Press " << CONSOLE_YELLOW << "+ " << CONSOLE_WHITE
+              << "if you successfully completed the main objective";
+    std::cout << "\x1b[20;1HNavigate the selection menu with " << CONSOLE_YELLOW
+              << "L" << CONSOLE_WHITE << " and " << CONSOLE_YELLOW << "R"
+              << CONSOLE_WHITE;
+    std::cout << "\x1b[;1H";
+    print_list(selector, card_list);
+    std::cout << "\x1b[1;30HCard #" << selector + 1 << " of "
+              << card_list.size();
+    // if won
+    if (kDown & HidNpadButton_Plus &&
+        card_list[selector].completed == completion_status::not_started) {
+      card_list[selector].completed = completion_status::secondary_not_started;
+      declare_menu_confirmation = true;
+      no_quit = true;
+      already_pressed = true;
+      no_exit_screen = true;
+      checker = selector + 1;
+    }
+    // if lost
+    if (kDown & HidNpadButton_Minus &&
+        card_list[selector].completed == completion_status::not_started) {
+      card_list[selector].completed = completion_status::failed;
+      declare_menu = false;
+      declare_menu_confirmation = false;
+      no_quit = false;
+      checker = selector + 1;
+    }
+    // if cancel
+    if (kDown & HidNpadButton_B) {
+      clrscrn();
+      if (result == completion_status::succeeded) {
+        remove_points(false, score);
+      } else if (result == completion_status::succeeded_with_bonus) {
+        remove_points(true, score);
+      }
+      card_list[selector].completed = completion_status::not_started;
+      declare_menu = false;
+      declare_menu_confirmation = false;
+      no_quit = false;
+      no_exit_screen = false;
+      declare_menu_confirmation = false;
+      checker = selector + 1;
+    }
+    auto o_f =
+        std::ofstream("../decks/data.txt", std::ios::out | std::ios::binary);
+    save(o_f, card_list);
+    o_f.close();
+  }
+  // declare menu 2: electric boogaloo
+  if (declare_menu && declare_menu_confirmation) {
+    checker = selector;
+    clrscrn();
+
+    std::cout << "\x1b[25;1HPress " << CONSOLE_YELLOW << "B " << CONSOLE_WHITE
+              << "to cancel\n\n"
+              << CONSOLE_WHITE;
+    std::cout << "Press " << CONSOLE_YELLOW << "- " << CONSOLE_WHITE
+              << "if you failed the main objective\n\n";
+    std::cout << "Press " << CONSOLE_YELLOW << "+ " << CONSOLE_WHITE
+              << "if you successfully completed the main objective";
+    std::cout << "\x1b[20;1HNavigate the selection menu with " << CONSOLE_YELLOW
+              << "L" << CONSOLE_WHITE << " and " << CONSOLE_YELLOW << "R"
+              << CONSOLE_WHITE;
+    std::cout << "\x1b[;1H";
+    print_list(selector, card_list);
+    std::cout << "\x1b[1;30HCard #" << selector + 1 << " of "
+              << card_list.size();
+    if (kDown & HidNpadButton_B && result == completion_status::not_started) {
+      // cancel
+      clrscrn();
+
+      card_list[selector].completed = completion_status::not_started;
+
+      declare_menu = false;
+      declare_menu_confirmation = false;
+      no_quit = false;
+      no_exit_screen = false;
+      declare_menu_confirmation = false;
+
+      checker = selector + 1;
+    }
+
+    if (kDown & HidNpadButton_Plus && !already_pressed) {
+      card_list[checker].completed = completion_status::succeeded_with_bonus;
+      declare_menu = false;
+      declare_menu_confirmation = false;
+      no_quit = false;
+      no_exit_screen = false;
+      checker = selector + 1;
+      already_pressed = false;
+      add_points(true, score);
+    }
+    if (kDown & HidNpadButton_Minus) {
+      card_list[selector].completed = completion_status::succeeded;
+      declare_menu = false;
+      declare_menu_confirmation = false;
+      no_quit = false;
+      no_exit_screen = false;
+      checker = selector + 1;
+      already_pressed = false;
+      add_points(false, score);
+    }
+    // save new information to the save file for loading completion status later
+    auto o_f =
+        std::ofstream("../decks/data.txt", std::ios::out | std::ios::binary);
+    save(o_f, card_list);
+    o_f.close();
+  }
+
+  // update the screen with new information each time it changes
+  if (selector != checker) {
+    checker = selector;
+    std::cout << "\x1b[1;1H";
+    clrscrn();
+    if (!declare_menu && !no_exit_screen && !declare_menu_confirmation) {
+      std::cout << "press " << CONSOLE_YELLOW << "+ " << CONSOLE_WHITE
+                << "to exit";
+    }
+    print_list(selector, card_list);
+    if (!no_exit_screen) {
+      std::cout << "\x1b[20;1HNavigate the selection menu with "
+                << CONSOLE_YELLOW << "L" << CONSOLE_WHITE << " and "
+                << CONSOLE_YELLOW << "R" << CONSOLE_WHITE;
+    }
+    if (result == completion_status::not_started) {
+      std::cout << "\n\nPress the " << CONSOLE_YELLOW << "Right Stick "
+                << CONSOLE_WHITE << "to declare the result of your run!\n\n";
+    }
+
+    std::cout << "\x1b[1;34HCard #" << selector + 1 << " of "
+              << card_list.size();
+  }
+  // if in the end_game() confirm menu
+  if (declare_menu_confirmation && no_exit_screen && no_quit && !declare_menu) {
+    no_quit = true;
+    clrscrn();
+    std::cout << CONSOLE_RED << "are you sure?\n\n" << CONSOLE_WHITE;
+    std::cout << "press " << CONSOLE_YELLOW << "+ " << CONSOLE_WHITE
+              << "to confirm\n\n";
+    std::cout << "press " << CONSOLE_YELLOW << "- " << CONSOLE_WHITE
+              << "to cancel";
+    if (kDown & HidNpadButton_Plus) {
+      end_game(score);
+      no_exit_screen = false;
+    } else if (kDown & HidNpadButton_Minus) {
+      no_exit_screen = false;
+      no_quit = false;
+      declare_menu_confirmation = false;
+      checker = selector + 1;
+      print_score(score);
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {
   std::vector<card> card_list;
+  bool yes_quit = false;
+  bool no_quit = false;
 
-  double score;
+  unsigned int selector = 0;
+  unsigned int checker = 1;
+
+  double score = 0;
 
   bool text_loaded = false;
 
-  // std::vector<std::string> game_list;
-
-  // std::vector<std::string> primary_list;
-
-  // std::vector<std::string> secondary_list;
-
-  // std::vector<std::string> completed_list;
   // This example uses a text console, as a simple way to output text to the
   // screen. If you want to write a software-rendered graphics application,
   //   take a look at the graphics/simplegfx example, which uses the libnx
@@ -219,13 +403,17 @@ int main(int argc, char *argv[]) {
   // controller styles
   padConfigureInput(1, HidNpadStyleSet_NpadStandard);
 
-  // Initialize the default gamepad (which reads handheld mode inputs as well
-  // as the first connected controller)
+  // Initialize the default gamepad (which reads handheld mode inputs as
+  // well as the first connected controller)
   PadState pad;
   padInitializeDefault(&pad);
   // Main loop
   srand(time(NULL));
-  bool menu1 = false;
+  bool declare_menu_confirmation = false;
+  bool declare_menu = false;
+  // bool deletion_menu = false;
+  bool no_exit_screen = false;
+
   // chdir("/");
   std::ifstream save_file("../decks/data.txt");
 
@@ -234,73 +422,36 @@ int main(int argc, char *argv[]) {
     std::ifstream outfile("../decks/data.txt");
     outfile.close();
   }
-  // std::vector<std::string> load_v1{};
-  // std::vector<std::string> load_v2{};
-  // bool text_loaded = false;
   {
     auto o_f =
         std::ofstream("../decks/data.txt", std::ios::out | std::ios::binary);
-    if (!o_f) {
-      // std::cout << CONSOLE_RED "Could not save data" CONSOLE_WHITE <<
-      // std::endl;
-      // cout << "\n\nCreating save file...\n\n";
-      // cout << CONSOLE_GREEN "Save file created!\n\n";
-      // cout << CONSOLE_WHITE "Restart the application";
-    }
 
-    // std::ifstream save_file("../decks/data.txt");
     if (save_file.peek() == std::ifstream::traits_type::eof() && o_f) {
-      // std::ostream data_file("../decks/data.txt");
-      update_list(card_list);
-      // card_list = {{"monolith", "die", "bad", false},
-      //                 {"isek", "cry", "pee", true}};
-      save(o_f, card_list);
-      intro(card_list);
-      text_loaded = true;
 
-      // cout << "\n\nwelp";
+      update_list(card_list);
+      save(o_f, card_list);
+      text_loaded = true;
     }
+    save_file.close();
+    o_f.close();
   }
 
   {
-    // chdir("/");
-    auto i_f =
-        std::ifstream("../decks/data.txt", std::ios::in | std::ios::binary);
-    if (!i_f) {
-      // std::cout << "Could not load data" << std::endl;
-      // std::cout << "Creating data.txt...";
-      // std::ofstream outfile("data.txt");
-      //  outfile.close();
-      //    cout << "save file created, restart the application!";
-      // return 1;
-    }
-    //  chdir("/");
-    load(i_f, card_list);
-    // cout << game_list.size();
-    //  cout << std::endl;
-    // load(i_f, primary_list);
-    // cout << primary_list.size();
-    // load(i_f, secondary_list);
     if (!text_loaded) {
-      cout << "press + to exit\n";
-      intro2_electric_boogaloo(card_list);
-      // cout << secondary_list.size();
+      auto i_f =
+          std::ifstream("../decks/data.txt", std::ios::in | std::ios::binary);
+      load(i_f, card_list);
+
+      for (unsigned int i = 0; i < card_list.size(); i++) {
+        completion_status result = card_list[i].completed;
+        if (result == completion_status::succeeded) {
+          add_points(false, score);
+        } else if (result == completion_status::succeeded_with_bonus) {
+          add_points(true, score);
+        }
+      }
     }
   }
-  /*
-    for (auto &c : game_list) {
-      std::cout << c << std::endl;
-    }
-
-    for (auto &c : primary_list) {
-      std::cout << c << std::endl;
-    }
-
-    for (auto &c : secondary_list) {
-      std::cout << c << std::endl;
-    }
-  */
-
   while (appletMainLoop()) {
     // Scan the gamepad. This should be done once for each frame
     padUpdate(&pad);
@@ -308,99 +459,13 @@ int main(int argc, char *argv[]) {
     // newly pressed in this frame compared to the previous one
     u64 kDown = padGetButtonsDown(&pad);
 
-    if (kDown & HidNpadButton_Plus && !menu1)
+    if ((kDown & HidNpadButton_Plus && !no_quit | yes_quit)) {
       break; // break in order to return to hbmenu
-
+    }
     // Your code goes here
-    if (kDown & HidNpadButton_Y && card_list.size() > 0 && !menu1) {
-      clrscrn();
-      cout << "press + to exit\n\n\n";
-      intro2_electric_boogaloo(card_list);
-      cout << CONSOLE_YELLOW;
-      print_list(0, card_list);
-      cout << CONSOLE_WHITE;
-      // print_list(0, card_list);
-      //   print_list(0, card_list);
-    }
-    if (kDown & HidNpadButton_X && card_list.size() > 1 && !menu1) {
-      clrscrn();
-      cout << "press + to exit\n\n\n";
-      intro2_electric_boogaloo(card_list);
-      cout << CONSOLE_YELLOW;
-      print_list(1, card_list);
-      cout << CONSOLE_WHITE;
-      // print_list(1, primary_list);
-      // print_list(1, secondary_list);
-    }
-    if (kDown & HidNpadButton_B && card_list.size() > 2 && !menu1) {
-      clrscrn();
-      cout << "press + to exit\n\n\n";
-      intro2_electric_boogaloo(card_list);
-      cout << CONSOLE_YELLOW;
-      print_list(2, card_list);
-      cout << CONSOLE_WHITE;
-      //  print_list(2, card_list);
-      // print_list(2, card_list);
-    }
-    if (kDown & HidNpadButton_A && card_list.size() > 3 && !menu1) {
-      clrscrn();
-      cout << "press + to exit\n\n\n";
-      intro2_electric_boogaloo(card_list);
-      cout << CONSOLE_YELLOW;
-      print_list(3, card_list);
-      cout << CONSOLE_WHITE;
-      // print_list(3, primary_list);
-      // print_list(3, secondary_list);
-    }
 
-    if (kDown & HidNpadButton_Minus) {
-      clrscrn();
-      menu1 = true;
-      cout << "you sure you want to delete the file??\n\n";
-      cout << "press - again to confirm or press + to cancel\n\n";
-    }
-    if (menu1 && kDown & HidNpadButton_Y) {
-      menu1 = false;
-      if (text_loaded) {
-        intro(card_list);
-      } else {
-        intro2_electric_boogaloo(card_list);
-      }
-    }
-    if (menu1 && kDown & HidNpadButton_Plus) {
-      clrscrn();
-      fs::current_path("/");
-      /*
-      std::fstream file("decks/data.txt");
-      if (file) {
-        cout << "save file found uwu \n\n";
-      } else {
-        cout << "no save file found, ya stinker \n\n";
-      }
-      menu1 = false;
-    }
-    */
-      bool rm = std::filesystem::remove("../decks/data.txt");
-      if (!rm) {
-        cout << "failed removing save file";
-        menu1 = false;
-        // perror("error removing file: \n\n");
-        // cout << "press any button to continue\n\n";
-        // std::cin.ignore(10000, '\n');
-
-        if (text_loaded) {
-          intro(card_list);
-        } else {
-          intro2_electric_boogaloo(card_list);
-        }
-      } /*else {
-        clrscrn();
-        menu1 = false;
-        cout << "press + to exit\n\n";
-        cout << "file deleted, restart the application";
-      }
-      */
-    }
+    select_menu(card_list, kDown, selector, checker, declare_menu,
+                declare_menu_confirmation, no_quit, no_exit_screen, score);
 
     // Update the console, sending a new frame to the display
     consoleUpdate(NULL);
