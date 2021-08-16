@@ -43,7 +43,7 @@ SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
 #ROMFS	:=	romfs
-ICON		:=  	Pyramid.jpg
+ICON		:=  	assets/Pyramid.jpg
 APP_TITLE	:=	Pyramid-NX
 APP_AUTHOR	:=	DaQueenJodi
 #---------------------------------------------------------------------------------
